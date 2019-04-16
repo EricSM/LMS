@@ -484,6 +484,37 @@ namespace LMS.Controllers
     /// <returns>A unique uID that is not be used by anyone else</returns>
     public string CreateNewUser(string fName, string lName, DateTime DOB, string SubjectAbbrev, string role)
     {
+      // Untested
+      using (db)
+      {
+        // Admin highest uID
+        var query = (from a in db.Administrators
+                     orderby a.UId descending
+                     select a.UId).Take(1);
+
+        // Professor highest uID
+        var query2 = (from a in db.Professors
+                      orderby a.UId descending
+                      select a.UId).Take(1);
+
+        // Student highest uID
+        var query3 = (from a in db.Students
+                      orderby a.UId descending
+                      select a.UId).Take(1);
+
+        var uIDs = query.Union(query2.Union(query3));
+
+        var newUID = 0;
+        foreach (string uid in uIDs)
+        {
+          var uidInt = Convert.ToInt32(uid.Substring(1));
+          if (uidInt > newUID)
+            newUID = uidInt;
+        }
+        newUID++;
+
+        // TODO: convert new uid to string with 'u' and test method
+      }
       return "";
     }
 
