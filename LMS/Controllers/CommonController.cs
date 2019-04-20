@@ -115,8 +115,33 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
         {
+            char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
+            JsonResult result;
+            using (db)
+            {
+                var query = from c in db.Courses
+                            join c2 in db.Classes
+                            on c.CatalogId equals c2.CatalogId
+                            into CourseClass
 
-            return Json(null);
+                            from cc in CourseClass
+                            join p in db.Professors
+                            on cc.TeacherId equals p.UId
+                            where c.Subject == subject && c.Number == number
+                            select new
+                            {
+                                season = cc.Semester.Split(charSplit, 2)[0],
+                                year = cc.Semester.Split(charSplit, 2)[1],
+                                location = cc.Location,
+                                start = cc.Start,
+                                end = cc.End,
+                                fname = p.FName,
+                                lname = p.LName
+                            };
+
+                result = Json(query.ToArray());
+            }
+                return result;
         }
 
         /// <summary>
