@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using LMS.Models;
 using LMS.Models.AccountViewModels;
 using LMS.Services;
+using LMS.Models.LMSModels;
 
 namespace LMS.Controllers
 {
@@ -506,21 +507,56 @@ namespace LMS.Controllers
 
                 var uIDs = query.Union(query2.Union(query3));
 
-                var newUID = 0;
+                // Determine the highest uID (default uid is 0)
+                var newUID = -1;
                 foreach (string uid in uIDs)
                 {
                     var uidInt = Convert.ToInt32(uid.Substring(1));
                     if (uidInt > newUID)
                         newUID = uidInt;
                 }
-                newUID++;
+                newUID++; // The new uid is one higher than the highest one found.
 
+                // Pad uid with zeros and the char 'u' in front to make it 8 characters.
                 UIDstring = newUID.ToString();
                 for (int i = UIDstring.Length; i < 7; i++)
                 {
                     UIDstring = "0" + UIDstring;
                 }
                 UIDstring = "u" + UIDstring;
+
+                // Update database
+                if (role == "Student")
+                {
+                    Students student = new Students();
+                    student.UId = UIDstring;
+                    student.FName = fName;
+                    student.LName = lName;
+                    student.Dob = DOB;
+
+                    db.Students.Add(student);
+                }
+                else if (role == "Professor")
+                {
+                    Professors prof = new Professors();
+                    prof.UId = UIDstring;
+                    prof.FName = fName;
+                    prof.LName = lName;
+                    prof.Dob = DOB;
+
+                    db.Professors.Add(prof);
+                }
+                else if (role == "Administrator")
+                {
+                    Administrators admin = new Administrators();
+                    admin.UId = UIDstring;
+                    admin.FName = fName;
+                    admin.LName = lName;
+                    admin.Dob = DOB;
+
+                    db.Administrators.Add(admin);
+                }
+                db.SaveChanges();
             }
             return UIDstring;
         }
