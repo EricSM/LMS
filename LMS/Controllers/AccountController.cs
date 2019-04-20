@@ -514,8 +514,13 @@ namespace LMS.Controllers
                         newUID = uidInt;
                 }
                 newUID++;
-                
-                UIDstring = "u" + newUID;
+
+                UIDstring = newUID.ToString();
+                for (int i = UIDstring.Length; i < 7; i++)
+                {
+                    UIDstring = "0" + UIDstring;
+                }
+                UIDstring = "u" + UIDstring;
             }
             return UIDstring;
         }
