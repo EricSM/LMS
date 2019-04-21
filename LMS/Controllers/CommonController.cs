@@ -158,8 +158,32 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
+            char[] delimiter = { ' ' };
+            string ans;
+            using (db)
+            {
+                var query = from a in db.Assignments.Where(a1 => a1.Name == asgname)
+                            join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                            on a.Category equals ac.AssignCatId
+                            into Assign
 
-            return Content("");
+                            from ass in Assign
+                            join c in db.Classes.Where(c1 => c1.Semester.Split(delimiter, 2)[0] == season &&
+                                c1.Semester.Split(delimiter, 2)[1] == year.ToString())
+                            on ass.ClassId equals c.ClassId
+                            into AssClass
+
+                            from asc in AssClass
+                            join co in db.Courses
+                            on asc.CatalogId equals co.CatalogId
+                            where co.Subject == subject && co.Number == num
+                            select new
+                            {
+                                contents = a.Contents
+                            };
+                ans = query.ToString();
+            }
+                return Content(ans);
         }
 
 
