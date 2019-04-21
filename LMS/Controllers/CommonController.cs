@@ -159,7 +159,7 @@ namespace LMS.Controllers
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
             char[] delimiter = { ' ' };
-            string ans;
+            string ans = "";
             using (db)
             {
                 var query = from a in db.Assignments.Where(a1 => a1.Name == asgname)
@@ -203,8 +203,43 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
+            char[] delimiter = { ' ' };
+            string ans = "";
+            using (db)
+            {
+                var query = from su in db.Submissions
+                            join s in db.Students.Where(s1 => s1.UId == uid)
+                            on su.Student equals s.UId
+                            into StudentSubmissions
 
-            return Content("");
+                            from ss in StudentSubmissions
+                            join a in db.Assignments.Where(a1 => a1.Name == asgname)
+                            on su.AId equals a.AId
+                            into StudSubAss
+
+                            from ssa in StudSubAss
+                            join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                            on ssa.Category equals ac.AssignCatId
+                            into SSACat
+
+                            from sc in SSACat
+                            join cl in db.Classes.Where(cl1 => cl1.Semester.Split(delimiter, 2)[0] == season &&
+                                cl1.Semester.Split(delimiter, 2)[1] == year.ToString())
+                            on sc.ClassId equals cl.ClassId
+                            into ClassAssignments
+
+                            from cla in ClassAssignments
+                            join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
+                            on cla.CatalogId equals co.CatalogId
+                            into CourseAssignments
+                            select new
+                            {
+                                submission = su.Contents
+                            };
+                
+                ans = query.ToString();
+            }
+            return Content(ans);
         }
 
 
