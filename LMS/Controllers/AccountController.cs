@@ -486,8 +486,7 @@ namespace LMS.Controllers
         public string CreateNewUser(string fName, string lName, DateTime DOB, string SubjectAbbrev, string role)
         {
             string UIDstring;
-
-            // Untested
+            
             using (db)
             {
                 // Admin highest uID
@@ -526,6 +525,7 @@ namespace LMS.Controllers
                 UIDstring = "u" + UIDstring;
 
                 // Update database
+                Departments department = db.Departments.FirstOrDefault(d => d.Subject == SubjectAbbrev);
                 if (role == "Student")
                 {
                     Students student = new Students();
@@ -533,6 +533,7 @@ namespace LMS.Controllers
                     student.FName = fName;
                     student.LName = lName;
                     student.Dob = DOB;
+                    student.MajorNavigation = department;
 
                     db.Students.Add(student);
                 }
@@ -543,6 +544,7 @@ namespace LMS.Controllers
                     prof.FName = fName;
                     prof.LName = lName;
                     prof.Dob = DOB;
+                    prof.SubjectNavigation = department;
 
                     db.Professors.Add(prof);
                 }
