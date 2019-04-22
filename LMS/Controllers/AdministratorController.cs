@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -90,9 +91,33 @@ namespace LMS.Controllers
     /// false if the course already exists, true otherwise.</returns>
     public IActionResult CreateCourse(string subject, int number, string name)
     {
-      
+      using (db)
+      {
+        // Check if this course already exists
+        var query = from c in db.Courses
+                    where c.Subject == subject && c.Number == (ushort) number
+                    select c;
 
-      return Json(new { success = false });
+        // If course already exists, return false
+        if (query.Any())
+          return Json(new { success = false });
+        // Otherwise, add new course to database and return true.
+        else
+        {
+
+          Departments dept = db.Departments.FirstOrDefault(d => d.Subject == subject);
+          Courses course = new Courses();
+          course.Subject = subject;
+          course.Number = (ushort)number;
+          course.Name = name;
+          course.SubjectNavigation = dept;
+
+          db.Courses.Add(course);
+          db.SaveChanges();
+
+          return Json(new { success = true });
+        }
+      }
     }
 
 
