@@ -104,8 +104,10 @@ namespace LMS.Controllers
         // Otherwise, add new course to database and return true.
         else
         {
-
+          // Retrive department of the new course
           Departments dept = db.Departments.FirstOrDefault(d => d.Subject == subject);
+
+          // Create new Course object
           Courses course = new Courses();
           course.Subject = subject;
           course.Number = (ushort)number;
@@ -145,6 +147,7 @@ namespace LMS.Controllers
 
       using (db)
       {
+        // Check if this class conflicts with other classes in the same semester or in the same room and time.
         var query = from cl in db.Classes
                     join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
@@ -152,12 +155,17 @@ namespace LMS.Controllers
                     (((cl.Start >= startTime && cl.Start <= endTime) || (cl.End >= startTime && cl.End <= endTime)) && cl.Location == location))
                     select cl;
 
+        // If there are conflicts return false
         if (query.Any())
           return Json(new { success = false });
+        // Otherwise add new class to database and return true
         else
         {
+          // Retrieve the professor and course of the class
           Professors professor = db.Professors.FirstOrDefault(p => p.UId == instructor);
           Courses course = db.Courses.FirstOrDefault(c => c.Subject == subject && c.Number == (ushort)number);
+
+          // Create new Class object
           Classes newClass = new Classes();
           newClass.Semester = season + " " + year;
           newClass.Start = startTime;
