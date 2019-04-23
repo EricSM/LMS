@@ -105,8 +105,32 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
     {
-      
-      return Json(null);
+      // Untested
+      using (db)
+      {
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
+
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.Enrolled
+                    into enrolled
+
+                    from e in enrolled
+                    join s in db.Students
+                    on e.StudentId equals s.UId
+                    select new
+                    {
+                      fname = s.FName,
+                      lname = s.LName,
+                      uid = s.UId,
+                      dob = s.Dob,
+                      grade = e.Grade
+                    };
+        return Json(query.ToArray());
+      }
     }
 
 
