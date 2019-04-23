@@ -140,8 +140,38 @@ namespace LMS.Controllers
     /// true otherwise.</returns>
     public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
     {
-      
-      return Json(new { success = false });
+      var startTime = new TimeSpan(start.Hour, start.Minute, start.Second);
+      var endTime = new TimeSpan(end.Hour, end.Minute, end.Second);
+
+      using (db)
+      {
+        var query = from cl in db.Classes
+                    join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                    where cl.Semester == season + " " + year && ((co.Subject == subject && co.Number == (ushort)number) ||
+                    (((cl.Start >= startTime && cl.Start <= endTime) || (cl.End >= startTime && cl.End <= endTime)) && cl.Location == location))
+                    select cl;
+
+        if (query.Any())
+          return Json(new { success = false });
+        else
+        {
+          Professors professor = db.Professors.FirstOrDefault(p => p.UId == instructor);
+          Courses course = db.Courses.FirstOrDefault(c => c.Subject == subject && c.Number == (ushort)number);
+          Classes newClass = new Classes();
+          newClass.Semester = season + " " + year;
+          newClass.Start = startTime;
+          newClass.End = endTime;
+          newClass.Location = location;
+          newClass.Teacher = professor;
+          newClass.Catalog = course;
+
+          db.Classes.Add(newClass);
+          db.SaveChanges();
+
+          return Json(new { success = true });
+        }
+      }
     }
 
 
