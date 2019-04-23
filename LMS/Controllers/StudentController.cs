@@ -111,8 +111,37 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {
+            char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
 
-            return Json(null);
+            var query = from s in db.Submissions.Where(s1 => s1.Student == uid)
+                        join a in db.Assignments
+                        on s.AId equals a.AId
+                        into submitAssignments
+
+                        from sa in submitAssignments
+                        join ac in db.AssignmentCategories
+                        on sa.Category equals ac.AssignCatId
+                        into submitAssCat
+
+                        from sac in submitAssCat
+                        join c in db.Classes.Where(c1 => c1.Semester.Split(charSplit, 2)[0] == season &&
+                        c1.Semester.Split(charSplit, 2)[1] == year.ToString())
+                        on sac.ClassId equals c.ClassId
+                        into submitClass
+
+                        from sc in submitClass
+                        join co in db.Courses.Where(co1 => co1.Subject == subject && co1.Number == num)
+                        on sc.CatalogId equals co.CatalogId
+                        select new
+                        {
+                            aname = sa.Name,
+                            cname = sac.Name,
+                            due = sa.DueDate,
+                            score = sa.Submissions
+                        };
+
+
+            return Json(query.ToArray());
         }
 
 
