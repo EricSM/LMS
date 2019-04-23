@@ -51,14 +51,13 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetDepartments()
         {
-            using (db)
-            {
-                var query =
-                  from d in db.Departments
-                  select new { subject = d.Subject, name = d.Name };
 
-                return Json(query.ToArray());
-            }
+            var query =
+              from d in db.Departments
+              select new { subject = d.Subject, name = d.Name };
+
+            return Json(query.ToArray());
+
         }
 
 
@@ -77,25 +76,24 @@ namespace LMS.Controllers
         public IActionResult GetCatalog()
         {
             JsonResult result;
-            using (db)
-            {
-                var query = from d in db.Departments
-                            select new
-                            {
-                                subject = d.Subject,
-                                dname = d.Name,
-                                courses = from c in db.Courses
-                                          join e in db.Departments
-                                          on c.Subject equals e.Subject
-                                          where c.Subject == d.Subject
-                                          select new
-                                          {
-                                              number = c.CatalogId,
-                                              cname = c.Name
-                                          }
-                            };
-                result = Json(query.ToArray());
-            }
+
+            var query = from d in db.Departments
+                        select new
+                        {
+                            subject = d.Subject,
+                            dname = d.Name,
+                            courses = from c in db.Courses
+                                      join e in db.Departments
+                                      on c.Subject equals e.Subject
+                                      where c.Subject == d.Subject
+                                      select new
+                                      {
+                                          number = c.CatalogId,
+                                          cname = c.Name
+                                      }
+                        };
+            result = Json(query.ToArray());
+
             return result;
         }
 
@@ -117,31 +115,30 @@ namespace LMS.Controllers
         {
             char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
             JsonResult result;
-            using (db)
-            {
-                var query = from c in db.Courses
-                            join c2 in db.Classes
-                            on c.CatalogId equals c2.CatalogId
-                            into CourseClass
 
-                            from cc in CourseClass
-                            join p in db.Professors
-                            on cc.TeacherId equals p.UId
-                            where c.Subject == subject && c.Number == number
-                            select new
-                            {
-                                season = cc.Semester.Split(charSplit, 2)[0],
-                                year = cc.Semester.Split(charSplit, 2)[1],
-                                location = cc.Location,
-                                start = cc.Start,
-                                end = cc.End,
-                                fname = p.FName,
-                                lname = p.LName
-                            };
+            var query = from c in db.Courses
+                        join c2 in db.Classes
+                        on c.CatalogId equals c2.CatalogId
+                        into CourseClass
 
-                result = Json(query.ToArray());
-            }
-                return result;
+                        from cc in CourseClass
+                        join p in db.Professors
+                        on cc.TeacherId equals p.UId
+                        where c.Subject == subject && c.Number == number
+                        select new
+                        {
+                            season = cc.Semester.Split(charSplit, 2)[0],
+                            year = cc.Semester.Split(charSplit, 2)[1],
+                            location = cc.Location,
+                            start = cc.Start,
+                            end = cc.End,
+                            fname = p.FName,
+                            lname = p.LName
+                        };
+
+            result = Json(query.ToArray());
+
+            return result;
         }
 
         /// <summary>
@@ -160,30 +157,29 @@ namespace LMS.Controllers
         {
             char[] delimiter = { ' ' };
             string ans = "";
-            using (db)
-            {
-                var query = from a in db.Assignments.Where(a1 => a1.Name == asgname)
-                            join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
-                            on a.Category equals ac.AssignCatId
-                            into Assign
 
-                            from ass in Assign
-                            join c in db.Classes.Where(c1 => c1.Semester.Split(delimiter, 2)[0] == season &&
-                                c1.Semester.Split(delimiter, 2)[1] == year.ToString())
-                            on ass.ClassId equals c.ClassId
-                            into AssClass
+            var query = from a in db.Assignments.Where(a1 => a1.Name == asgname)
+                        join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                        on a.Category equals ac.AssignCatId
+                        into Assign
 
-                            from asc in AssClass
-                            join co in db.Courses
-                            on asc.CatalogId equals co.CatalogId
-                            where co.Subject == subject && co.Number == num
-                            select new
-                            {
-                                contents = a.Contents
-                            };
-                ans = query.ToString();
-            }
-                return Content(ans);
+                        from ass in Assign
+                        join c in db.Classes.Where(c1 => c1.Semester.Split(delimiter, 2)[0] == season &&
+                            c1.Semester.Split(delimiter, 2)[1] == year.ToString())
+                        on ass.ClassId equals c.ClassId
+                        into AssClass
+
+                        from asc in AssClass
+                        join co in db.Courses
+                        on asc.CatalogId equals co.CatalogId
+                        where co.Subject == subject && co.Number == num
+                        select new
+                        {
+                            contents = a.Contents
+                        };
+            ans = query.ToString();
+
+            return Content(ans);
         }
 
 
@@ -205,40 +201,39 @@ namespace LMS.Controllers
         {
             char[] delimiter = { ' ' };
             string ans = "";
-            using (db)
-            {
-                var query = from su in db.Submissions
-                            join s in db.Students.Where(s1 => s1.UId == uid)
-                            on su.Student equals s.UId
-                            into StudentSubmissions
 
-                            from ss in StudentSubmissions
-                            join a in db.Assignments.Where(a1 => a1.Name == asgname)
-                            on su.AId equals a.AId
-                            into StudSubAss
+            var query = from su in db.Submissions
+                        join s in db.Students.Where(s1 => s1.UId == uid)
+                        on su.Student equals s.UId
+                        into StudentSubmissions
 
-                            from ssa in StudSubAss
-                            join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
-                            on ssa.Category equals ac.AssignCatId
-                            into SSACat
+                        from ss in StudentSubmissions
+                        join a in db.Assignments.Where(a1 => a1.Name == asgname)
+                        on su.AId equals a.AId
+                        into StudSubAss
 
-                            from sc in SSACat
-                            join cl in db.Classes.Where(cl1 => cl1.Semester.Split(delimiter, 2)[0] == season &&
-                                cl1.Semester.Split(delimiter, 2)[1] == year.ToString())
-                            on sc.ClassId equals cl.ClassId
-                            into ClassAssignments
+                        from ssa in StudSubAss
+                        join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                        on ssa.Category equals ac.AssignCatId
+                        into SSACat
 
-                            from cla in ClassAssignments
-                            join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
-                            on cla.CatalogId equals co.CatalogId
-                            into CourseAssignments
-                            select new
-                            {
-                                submission = su.Contents
-                            };
-                
-                ans = query.ToString();
-            }
+                        from sc in SSACat
+                        join cl in db.Classes.Where(cl1 => cl1.Semester.Split(delimiter, 2)[0] == season &&
+                            cl1.Semester.Split(delimiter, 2)[1] == year.ToString())
+                        on sc.ClassId equals cl.ClassId
+                        into ClassAssignments
+
+                        from cla in ClassAssignments
+                        join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
+                        on cla.CatalogId equals co.CatalogId
+                        into CourseAssignments
+                        select new
+                        {
+                            submission = su.Contents
+                        };
+
+            ans = query.ToString();
+
             return Content(ans);
         }
 
@@ -248,7 +243,7 @@ namespace LMS.Controllers
         /// The object should have the following fields:
         /// "fname": the user's first name
         /// "lname": the user's last name
-        /// "uid": the user's uid
+        /// "uid": the user's uid 
         /// "department": (professors and students only) the name (such as "Computer Science") of the department for the user. 
         ///               If the user is a Professor, this is the department they work in.
         ///               If the user is a Student, this is the department they major in.    
@@ -261,7 +256,60 @@ namespace LMS.Controllers
         /// </returns>
         public IActionResult GetUser(string uid)
         {
+            // First find out what category of person the user is
+            var adminCheckQuery = from a in db.Administrators.Where(a1 => a1.UId == uid)
+                             select a.UId;
 
+            if (uid == adminCheckQuery.ToString())
+            {
+                var query = from a in db.Administrators.Where(a1 => a1.UId == uid)
+                            select new
+                            {
+                                fname = a.FName,
+                                lname = a.LName,
+                                uid = a.UId
+                            };
+                return Json(query.ToString());
+            }
+
+            else  // User is not an administrator
+            {
+                var professorCheckQuery = from p in db.Professors.Where(p1 => p1.UId == uid)
+                                          select p.UId;
+
+                var studentCheckQuery = from s in db.Students.Where(s1 => s1.UId == uid)
+                                          select s.UId;
+
+                if (uid == professorCheckQuery.ToString())
+                {
+                    var query = from p in db.Professors.Where(p1 => p1.UId == uid)
+                                select new
+                                {
+                                    fname = p.FName,
+                                    lname = p.LName,
+                                    uid = p.UId,
+                                    department = p.Subject
+                                };
+
+                    return Json(query.ToString());
+                }
+
+                else if (uid == studentCheckQuery.ToString())
+                {
+                    var query = from s in db.Students.Where(p1 => p1.UId == uid)
+                                select new
+                                {
+                                    fname = s.FName,
+                                    lname = s.LName,
+                                    uid = s.UId,
+                                    department = s.Major
+                                };
+
+                    return Json(query.ToString());
+                }
+            }
+
+            // If we get this far, the user is not found in any of the users tables
             return Json(new { success = false });
         }
 
