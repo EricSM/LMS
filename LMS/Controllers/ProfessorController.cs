@@ -199,9 +199,29 @@ namespace LMS.Controllers
     /// <param name="category">The name of the assignment category in the class</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
-    {      
+    {
+      // Untested
+      using (db)
+      {
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
 
-      return Json(null);
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.AssignmentCategories
+                    into categories
+
+                    from cat in categories
+                    select new
+                    {
+                      name = cat.Name,
+                      weight = cat.Weight
+                    };
+
+        return Json(query.ToArray());
+      }
     }
 
     /// <summary>
