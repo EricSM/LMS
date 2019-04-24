@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -236,9 +237,53 @@ namespace LMS.Controllers
     /// <param name="catweight">The new category weight</param>
     /// <returns>A JSON object containing {success = true/false} </returns>
     public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year, string category, int catweight)
-    {    
+    {
+      // Untested
+      using (db)
+      {
+        // Check if this category already exists in this class
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
 
-      return Json(new { success = false });
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.AssignmentCategories
+                    into categories
+
+                    from cat in categories
+                    where cat.Name == category
+                    select cat;
+
+        // if category already exists, return false
+        if (query.Any())
+          return Json(new { success = false });
+        else
+        {
+          // retieve class of new category
+          Classes myClass = (from co in db.Courses
+                             where co.Subject == subject && co.Number == num
+                             select co.Classes
+                             into classes
+
+                             from cl in classes
+                             where cl.Semester == season + " " + year
+                             select cl).FirstOrDefault();
+
+          // create new assignment category object
+          AssignmentCategories newCat = new AssignmentCategories();
+          newCat.Class = myClass;
+          newCat.Name = category;
+          newCat.Weight = (uint)catweight;
+
+          // add it to the database
+          db.AssignmentCategories.Add(newCat);
+          db.SaveChanges();
+
+          return Json(new { success = true });
+        }
+      }
     }
 
     /// <summary>
@@ -256,8 +301,64 @@ namespace LMS.Controllers
     /// <returns>A JSON object containing success = true/false</returns>
     public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
     {
+      // Untested
+      using (db)
+      {
+        // Check if the assignment already exists in this class category
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
 
-      return Json(new { success = false });
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.AssignmentCategories
+                    into categories
+
+                    from cat in categories
+                    where cat.Name == category
+                    select cat.Assignments
+                    into assigns
+
+                    from a in assigns
+                    where a.Name == asgname
+                    select a;
+
+        // if category already exists, return false
+        if (query.Any())
+          return Json(new { success = false });
+        else
+        {
+          // retieve class of new category
+          AssignmentCategories myCat = (from co in db.Courses
+                                        where co.Subject == subject && co.Number == num
+                                        select co.Classes
+                                        into classes
+
+                                        from cl in classes
+                                        where cl.Semester == season + " " + year
+                                        select cl.AssignmentCategories
+                                        into categories
+
+                                        from cat in categories
+                                        where cat.Name == category
+                                        select cat).FirstOrDefault();
+
+          // create new assignment object
+          Assignments newAssign = new Assignments();
+          newAssign.Name = asgname;
+          newAssign.Points = (uint)asgpoints;
+          newAssign.Contents = asgcontents;
+          newAssign.DueDate = asgdue;
+          newAssign.CategoryNavigation = myCat;
+
+          // add it to the database
+          db.Assignments.Add(newAssign);
+          db.SaveChanges();
+
+          return Json(new { success = true });
+        }
+      }
     }
 
 
@@ -280,8 +381,47 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetSubmissionsToAssignment(string subject, int num, string season, int year, string category, string asgname)
     {
-     
-      return Json(null);
+      // Untested
+      using (db)
+      {
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
+
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.AssignmentCategories
+                    into categories
+
+                    from ca in categories
+                    where ca.Name == category
+                    join a in db.Assignments
+                    on ca.AssignCatId equals a.Category
+                    into assignments
+
+                    from assign in assignments
+                    where assign.Name == asgname
+                    select assign.Submissions
+                    into submissions
+
+                    from subs in submissions
+                    join stu in db.Students
+                    on subs.Student equals stu.UId
+                    into stuJoinSubs
+
+                    from j in stuJoinSubs
+                    select new
+                    {
+                      fname = j.FName,
+                      lname = j.LName,
+                      uid = j.UId,
+                      time = subs.Time,
+                      score = subs.Score
+                    };
+
+        return Json(query.ToArray());
+      }
     }
 
 
@@ -298,8 +438,47 @@ namespace LMS.Controllers
     /// <param name="score">The new score for the submission</param>
     /// <returns>A JSON object containing success = true/false</returns>
     public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
-    {    
+    {
+      // Untested
+      using (db)
+      {
+        // retreive student's submission
+        var query = from co in db.Courses
+                    where co.Subject == subject && co.Number == num
+                    select co.Classes
+                    into classes
 
+                    from cl in classes
+                    where cl.Semester == season + " " + year
+                    select cl.AssignmentCategories
+                    into categories
+
+                    from ca in categories
+                    where ca.Name == category
+                    join a in db.Assignments
+                    on ca.AssignCatId equals a.Category
+                    into assignments
+
+                    from assign in assignments
+                    where assign.Name == asgname
+                    select assign.Submissions
+                    into submissions
+
+                    from subs in submissions
+                    where subs.Student == uid
+                    select subs;
+
+        Submissions s = query.SingleOrDefault();
+
+        // update submission if it exists
+        if (s != null)
+          s.Score = (uint?)score;
+        else
+        {
+          return Json(new { success = false });
+        }
+        db.SaveChanges();
+      }
       return Json(new { success = true });
     }
 
@@ -316,9 +495,33 @@ namespace LMS.Controllers
     /// <param name="uid">The professor's uid</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
-    {     
+    {
+      // Untested
+      using (db)
+      {
+        var query = from co in db.Courses
+                    join cl in db.Classes
+                    on co.CatalogId equals cl.CatalogId
+                    into coJoinCl
 
-      return Json(null);
+                    from j1 in coJoinCl
+                    join p in db.Professors
+                    on j1.TeacherId equals p.UId
+                    into cJoinP
+
+                    from j2 in cJoinP
+                    where j2.UId == uid
+                    select new
+                    {
+                      subject = co.Subject,
+                      number = co.Number,
+                      name = co.Name,
+                      season = j1.Semester.Split()[0],
+                      year = int.Parse(j1.Semester.Split()[1])
+                    };
+
+        return Json(query.ToArray());
+      }
     }
 
 
