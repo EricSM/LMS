@@ -88,7 +88,7 @@ namespace LMS.Controllers
                                       where c.Subject == d.Subject
                                       select new
                                       {
-                                          number = c.CatalogId,
+                                          number = c.Number,
                                           cname = c.Name
                                       }
                         };
