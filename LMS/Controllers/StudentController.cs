@@ -282,6 +282,9 @@ namespace LMS.Controllers
                 enroll.StudentId = uid;
                 enroll.ClassId = classID;
 
+                db.Enrolled.Add(enroll);
+                db.SaveChanges();
+
                 return Json(new { success = true });
             }
         }
