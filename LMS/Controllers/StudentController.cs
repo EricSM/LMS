@@ -275,12 +275,21 @@ namespace LMS.Controllers
 
             else
             {
-                uint classID = 0;
-                uint.TryParse(query.ToString(), out classID);
+                Classes myClass = (from co in db.Courses
+                                   where co.Subject == subject && co.Number == num
+                                   select co.Classes
+                                   into classes
+
+                                   from cl in classes
+                                   where cl.Semester == season + " " + year
+                                   select cl).FirstOrDefault();
 
                 Enrolled enroll = new Enrolled();
                 enroll.StudentId = uid;
-                enroll.ClassId = classID;
+                enroll.Class = myClass;
+
+                db.Enrolled.Add(enroll);
+                db.SaveChanges();
 
                 db.Enrolled.Add(enroll);
                 db.SaveChanges();
