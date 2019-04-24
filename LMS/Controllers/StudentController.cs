@@ -312,31 +312,45 @@ namespace LMS.Controllers
 
             foreach(string s in gradeList)
             {
-                if (s == "A")
-                    gpa += 4.0 * credits;
-                else if (s == "A-")
-                    gpa += 3.7 * credits;
-                else if (s == "B+")
-                    gpa += 3.3 * credits;
-                else if (s == "B")
-                    gpa += 3.0 * credits;
-                else if (s == "B-")
-                    gpa += 2.7 * credits;
-                else if (s == "C+")
-                    gpa += 2.3 * credits;
-                else if (s == "C")
-                    gpa += 2.0 * credits;
-                else if (s == "C-")
-                    gpa += 1.7 * credits;
-                else if (s == "D+")
-                    gpa += 1.3 * credits;
-                else if (s == "D")
-                    gpa += 1.0 * credits;
-                else if (s == "D-")
-                    gpa += 0.7 * credits;
-                else  //(s == "E")
-                    gpa += 0.0 * credits;
-
+                switch (s)
+                {
+                    case "A":
+                        gpa += 4.0 * credits;
+                        break;
+                    case "A-":
+                        gpa += 3.7 * credits;
+                        break;
+                    case "B+":
+                        gpa += 3.3 * credits;
+                        break;
+                    case "B":
+                        gpa += 3.0 * credits;
+                        break;
+                    case "B-":
+                        gpa += 2.7 * credits;
+                        break;
+                    case "C+":
+                        gpa += 2.3 * credits;
+                        break;
+                    case "C":
+                        gpa += 2.0 * credits;
+                        break;
+                    case "C-":
+                        gpa += 1.7 * credits;
+                        break;
+                    case "D+":
+                        gpa += 1.3 * credits;
+                        break;
+                    case "D":
+                        gpa += 1.0 * credits;
+                        break;
+                    case "D-":
+                        gpa += 0.7 * credits;
+                        break;
+                    default:
+                        break;
+                }
+                
                 gradePoints += credits;
             }
 
