@@ -168,9 +168,8 @@ namespace LMS.Controllers
           string category, string asgname, string uid, string contents)
         {
             char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
-
-
-            // Check if this Assignment Submission already exists
+            
+            // Check if this Assignment Submission already exists (with identical contents)
             var query = from s in db.Submissions.Where(s1 => s1.Contents == contents && s1.Student == uid)
                         join a in db.Assignments.Where(a1 => a1.Name == asgname)
                         on s.AId equals a.AId
@@ -197,15 +196,10 @@ namespace LMS.Controllers
             if (query.Any())
                 return Json(new { success = false });
 
-            // if the Assignment hasn't been created with the specified parameters, return false
-            var query2 = from s in db.Submissions.Where(s1 => s1.Contents == contents && s1.Student == uid)
-                         join a in db.Assignments.Where(a1 => a1.Name == asgname)
-                         on s.AId equals a.AId
-                         into AssignmentSubmission
-
-                         from asu in AssignmentSubmission
+            // if the Assignment hasn't been created by a professor with the specified parameters, return false
+            var query2 = from a in db.Assignments.Where(a1 => a1.Name == asgname)
                          join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
-                         on asu.Category equals ac.AssignCatId
+                         on a.Category equals ac.AssignCatId
                          into assCat
 
                          from aca in assCat
@@ -217,26 +211,28 @@ namespace LMS.Controllers
                          from sc in submissionClass
                          join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
                          on sc.CatalogId equals co.CatalogId
-                         select sc;
+                         select a.AId;
 
             if (!query2.Any())
                 return Json(new { success = false });
-
+            
             // Otherwise, add new Submission to database and return true.
             else
             {
-                /*
+                uint assignmentID = 0;
+                uint.TryParse(query2.ToString(), out assignmentID);
+
                 // Create new Submission object
                 Submissions submission = new Submissions();
                 submission.Contents = contents;
                 submission.Student = uid;
                 submission.Time = DateTime.Now;
                 submission.Score = 0;
-
-                db.Courses.Add(course);
+                submission.AId = assignmentID;
+                
+                db.Submissions.Add(submission);
                 db.SaveChanges();
-                */
-
+                
                 return Json(new { success = true });
             }
             
@@ -255,8 +251,39 @@ namespace LMS.Controllers
         /// false if the student is already enrolled in the class, true otherwise.</returns>
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
         {
+            char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
 
-            return Json(new { success = false });
+            // Check to see if this student is already in the class
+            var query = from s in db.Students.Where(s1 => s1.UId == uid)
+                        join e in db.Enrolled
+                        on s.UId equals e.StudentId
+                        into enrolledStudents
+
+                        from es in enrolledStudents
+                        join c in db.Classes.Where(c1 => c1.Semester.Split(charSplit, 2)[0] == season &&
+                        c1.Semester.Split(charSplit, 2)[1] == year.ToString())
+                        on es.ClassId equals c.ClassId
+                        into enrolledInClass
+
+                        from ec in enrolledInClass
+                        join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
+                        on ec.CatalogId equals co.CatalogId
+                        select ec.ClassId;
+
+            if (query.Any())
+                return Json(new { success = false });
+
+            else
+            {
+                uint classID = 0;
+                uint.TryParse(query.ToString(), out classID);
+
+                Enrolled enroll = new Enrolled();
+                enroll.StudentId = uid;
+                enroll.ClassId = classID;
+
+                return Json(new { success = true });
+            }
         }
 
 
