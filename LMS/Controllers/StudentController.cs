@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -76,7 +77,7 @@ namespace LMS.Controllers
 
                         from se in studentEnrolled
                         join c in db.Classes
-                        on  se.ClassId equals c.ClassId
+                        on se.ClassId equals c.ClassId
                         into enrolledClasses
 
                         from ec in enrolledClasses
@@ -91,7 +92,7 @@ namespace LMS.Controllers
                             year = ec.Semester.Split(charSplit, 2)[1],
                             grade = se.Grade
                         };
-                        
+
             return Json(query.ToArray());
         }
 
@@ -166,8 +167,79 @@ namespace LMS.Controllers
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
         {
+            char[] charSplit = { ' ' };  // for use in delimiting the Semester into year and season
 
-            return Json(new { success = false });
+
+            // Check if this Assignment Submission already exists
+            var query = from s in db.Submissions.Where(s1 => s1.Contents == contents && s1.Student == uid)
+                        join a in db.Assignments.Where(a1 => a1.Name == asgname)
+                        on s.AId equals a.AId
+                        into AssignmentSubmission
+
+                        from asu in AssignmentSubmission
+                        join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                        on asu.Category equals ac.AssignCatId
+                        into assCat
+
+                        from aca in assCat
+                        join c in db.Classes.Where(c1 => c1.Semester.Split(charSplit, 2)[0] == season &&
+                        c1.Semester.Split(charSplit, 2)[1] == year.ToString())
+                        on aca.ClassId equals c.ClassId
+                        into submissionClass
+
+                        from sc in submissionClass
+                        join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
+                        on sc.CatalogId equals co.CatalogId
+                        select sc;
+
+
+            // If submission already exists, return false
+            if (query.Any())
+                return Json(new { success = false });
+
+            // if the Assignment hasn't been created with the specified parameters, return false
+            var query2 = from s in db.Submissions.Where(s1 => s1.Contents == contents && s1.Student == uid)
+                         join a in db.Assignments.Where(a1 => a1.Name == asgname)
+                         on s.AId equals a.AId
+                         into AssignmentSubmission
+
+                         from asu in AssignmentSubmission
+                         join ac in db.AssignmentCategories.Where(ac1 => ac1.Name == category)
+                         on asu.Category equals ac.AssignCatId
+                         into assCat
+
+                         from aca in assCat
+                         join c in db.Classes.Where(c1 => c1.Semester.Split(charSplit, 2)[0] == season &&
+                         c1.Semester.Split(charSplit, 2)[1] == year.ToString())
+                         on aca.ClassId equals c.ClassId
+                         into submissionClass
+
+                         from sc in submissionClass
+                         join co in db.Courses.Where(co1 => co1.Number == num && co1.Subject == subject)
+                         on sc.CatalogId equals co.CatalogId
+                         select sc;
+
+            if (!query2.Any())
+                return Json(new { success = false });
+
+            // Otherwise, add new Submission to database and return true.
+            else
+            {
+                /*
+                // Create new Submission object
+                Submissions submission = new Submissions();
+                submission.Contents = contents;
+                submission.Student = uid;
+                submission.Time = DateTime.Now;
+                submission.Score = 0;
+
+                db.Courses.Add(course);
+                db.SaveChanges();
+                */
+
+                return Json(new { success = true });
+            }
+            
         }
 
 
